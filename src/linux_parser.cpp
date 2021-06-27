@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <filesystem>
 
 #include "linux_parser.h"
 
@@ -10,6 +12,8 @@ using std::stof;
 using std::string;
 using std::to_string;
 using std::vector;
+
+namespace fs = std::filesystem;
 
 // DONE: An example of how to read data from the filesystem
 string LinuxParser::OperatingSystem() {
@@ -108,32 +112,122 @@ long LinuxParser::UpTime() {
   return upTime;
 }
 
+// cpu  27170 66 10006 536208 1047 0 2312 0 0 0
+// cpu0 3738 0 1205 66760 89 0 644 0 0 0
 // TODO: Read and return the number of jiffies for the system
+#define JIFFIE_COUNT 10
 long LinuxParser::Jiffies() {
-  string label, units;
-  float value;
-  float totalMem, freeMem;
+  string label;
+  long jiffies[JIFFIE_COUNT];
+  long total_jiffies = 0;
 
-  std::ifstream stream(kProcDirectory + kMeminfoFilename);
-  if (!stream.is_open()) return 0.0;
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  if (!stream.is_open()) return 0;
 
   for (std::string line; std::getline(stream, line); ) {
     std::istringstream lineStream(line);
-    lineStream >> label >> value >> units;
+    lineStream >> label;
+
+    if (label.compare("cpu") == 0) {
+       for (int i = 0; i < JIFFIE_COUNT; i++) {
+         lineStream >> jiffies[i];
+         total_jiffies += jiffies[i];
+       }
+    }
+    continue;
+  }
+
+  std::cout << "Jiffies: " << total_jiffies << std::endl;
+  return total_jiffies;
 }
 
 // TODO: Read and return the number of active jiffies for a PID
 // REMOVE: [[maybe_unused]] once you define the function
-long LinuxParser::ActiveJiffies(int pid[[maybe_unused]]) { return 0; }
+// 2058 (terminator) S 1694 1415 1415 0 -1 4194304 20252 103 33 0 214 175 0 0
+// 20 0 5 0 3150 868159488 16762 18446744073709551615 4337664 7035557
+// 140729268194400 0 0 0 0 16781312 65538 0 0 0 17 0 0 0 16 0 0 9387440 9677624
+// 35516416 140729268197852 140729268197889 140729268197889 140729268199396 0
+// 14 15 16 17
+#define FIRST_JIFFIE 14
+long LinuxParser::ActiveJiffies(int pid) {
+  fs::path pid_path(kProcDirectory + "/" + std::to_string(pid));
+  if (!fs::is_directory(pid_path)) return 0;
+
+  std::ifstream stream(kProcDirectory + "/" + std::to_string(pid) + "/stat");
+  if (!stream.is_open()) return 0;
+
+  long total_jiffies = 0;
+  long jiffie = 0;
+  std::string temp;
+  if (std::string line; std::getline(stream, line)) {
+    std::istringstream lineStream(line);
+    for (int i = 0; i < FIRST_JIFFIE - 1; i++) lineStream >> temp;
+    for (int j = 0; j < 4; j++) {
+      lineStream >> jiffie;
+      total_jiffies += jiffie;
+    }
+  }
+
+  std::cout << "Active Jiffies (" << pid << "): " << total_jiffies << std::endl;
+  return total_jiffies;
+}
 
 // TODO: Read and return the number of active jiffies for the system
-long LinuxParser::ActiveJiffies() { return 0; }
+long LinuxParser::ActiveJiffies() {
+  long jiffies = Jiffies() - IdleJiffies();
+  std::cout << "Active Jiffies: " << jiffies << std::endl;
+  return jiffies;
+}
 
 // TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
+#define IDLE_JIFFIE 4
+long LinuxParser::IdleJiffies() {
+  string label;
+  long idle_jiffies = 0;
 
-// TODO: Read and return CPU utilization
-vector<string> LinuxParser::CpuUtilization() { return {}; }
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  if (!stream.is_open()) return 0;
+
+  for (std::string line; std::getline(stream, line); ) {
+    std::istringstream lineStream(line);
+    lineStream >> label;
+
+    if (label.compare("cpu") == 0) {
+      for (int i = 0; i < (IDLE_JIFFIE - 1); i++) lineStream >> idle_jiffies;
+      lineStream >> idle_jiffies;
+    }
+
+    continue;
+  }
+
+  std::cout << "Idle Jiffies: " << idle_jiffies << std::endl;
+  return idle_jiffies;
+}
+
+// DONE: Read and return CPU utilization
+vector<long> LinuxParser::CpuUtilization() {
+  string label;
+  vector<long> jiffies;
+  long jiffie;
+
+  std::ifstream stream(kProcDirectory + kStatFilename);
+  if (!stream.is_open()) return {};
+
+  for (std::string line; std::getline(stream, line); ) {
+    std::istringstream lineStream(line);
+    lineStream >> label;
+
+    if (label.compare("cpu") == 0) {
+      for (int i = 0; i < CPUStates::kSize_; i++) {
+        lineStream >> jiffie;
+        jiffies.push_back(jiffie);
+      }
+    }
+    continue;
+  }
+
+  return jiffies;
+}
 
 // TODO: Read and return the total number of processes
 int LinuxParser::TotalProcesses() { return 0; }

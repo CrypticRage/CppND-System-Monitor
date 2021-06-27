@@ -9,6 +9,12 @@ int main() {
 
   float util = LinuxParser::MemoryUtilization();
   std::string upTime = Format::ElapsedTime(LinuxParser::UpTime());
+  long totalJiffs = LinuxParser::Jiffies();
+  totalJiffs = LinuxParser::ActiveJiffies(2058);
+  totalJiffs = LinuxParser::ActiveJiffies();
+  long idleJiffs = LinuxParser::IdleJiffies();
 
-  NCursesDisplay::Display(system);
+  std::vector<long> cpu = LinuxParser::CpuUtilization();
+
+  // NCursesDisplay::Display(system);
 }
