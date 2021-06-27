@@ -7,5 +7,14 @@ using std::string;
 // TODO: Complete this helper function
 // INPUT: Long int measuring seconds
 // OUTPUT: HH:MM:SS
-// REMOVE: [[maybe_unused]] once you define the function
-string Format::ElapsedTime(long seconds[[maybe_unused]]) { return string(); }
+string Format::ElapsedTime(long seconds) {
+  int secs = seconds % 60;
+  int rem = seconds / 60;
+  int mins = rem % 60;
+  rem /= 60;
+  int hours = rem % 60;
+
+  char buffer[64];
+  int size = sprintf(buffer, "%i:%02i:%02i", hours, mins, secs);
+  return string(buffer);
+}
