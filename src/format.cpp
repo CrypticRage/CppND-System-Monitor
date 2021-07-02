@@ -13,8 +13,9 @@ string Format::ElapsedTime(long seconds) {
   int mins = rem % 60;
   rem /= 60;
   int hours = rem % 60;
+  int days = rem / 24;
 
   char buffer[64];
-  int size = sprintf(buffer, "%i:%02i:%02i", hours, mins, secs);
+  sprintf(buffer, "%i days %i:%02i:%02i", days, hours, mins, secs);
   return string(buffer);
 }
