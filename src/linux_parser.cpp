@@ -1,15 +1,16 @@
+#include "linux_parser.h"
+
 #include <dirent.h>
 #include <unistd.h>
 
+#include <filesystem>
+#include <iostream>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <filesystem>
-#include <map>
 
 #include "format.h"
-#include "linux_parser.h"
 
 using std::stof;
 using std::string;
@@ -61,7 +62,7 @@ vector<int> LinuxParser::Pids() {
 
   if (!fs::is_directory(proc_path)) return {};
 
-  for (const auto & file : fs::directory_iterator(proc_path)) {
+  for (const auto& file : fs::directory_iterator(proc_path)) {
     std::string name = file.path().filename();
     if (file.is_directory() && IsNumber(name)) {
       pids.push_back(std::stoi(name, nullptr, 0));
@@ -82,7 +83,7 @@ float LinuxParser::MemoryUtilization() {
   std::ifstream stream(kProcDirectory + kMeminfoFilename);
   if (!stream.is_open()) return 0.0;
 
-  for (std::string line; std::getline(stream, line); ) {
+  for (std::string line; std::getline(stream, line);) {
     std::istringstream lineStream(line);
     lineStream >> label >> value >> units;
     if (label.find("MemTotal") != std::string::npos) {
@@ -140,7 +141,8 @@ unsigned long LinuxParser::ActiveJiffies(int pid) {
   ulong cstime = stoul(stat[LinuxParser::cstime_]);
 
   total_jiffies = utime + stime + cutime + cstime;
-  // std::cout << "Active Jiffies (" << pid << "): " << total_jiffies << std::endl;
+  // std::cout << "Active Jiffies (" << pid << "): " << total_jiffies <<
+  // std::endl;
   return total_jiffies;
 }
 
@@ -168,7 +170,7 @@ vector<unsigned long> LinuxParser::CpuUtilization() {
   std::ifstream stream(kProcDirectory + kStatFilename);
   if (!stream.is_open()) return {};
 
-  for (std::string line; std::getline(stream, line); ) {
+  for (std::string line; std::getline(stream, line);) {
     std::istringstream lineStream(line);
     lineStream >> label;
 
@@ -184,13 +186,10 @@ vector<unsigned long> LinuxParser::CpuUtilization() {
   return jiffies;
 }
 
-bool LinuxParser::IsNumber(const std::string& s)
-{
-  return !s.empty() && std::find_if(
-    s.begin(),
-    s.end(),
-    [](unsigned char c) { return !std::isdigit(c); }
-  ) == s.end();
+bool LinuxParser::IsNumber(const std::string& s) {
+  return !s.empty() && std::find_if(s.begin(), s.end(), [](unsigned char c) {
+                         return !std::isdigit(c);
+                       }) == s.end();
 }
 
 std::vector<std::string> LinuxParser::ProcessStat(int pid) {
@@ -238,9 +237,7 @@ std::string LinuxParser::ProcessStatus(int pid, std::string param) {
 }
 
 // DONE: Read and return the total number of processes
-int LinuxParser::TotalProcesses() {
-  return Pids().size();
-}
+int LinuxParser::TotalProcesses() { return Pids().size(); }
 
 // DONE: Read and return the number of running processes
 int LinuxParser::RunningProcesses() {
@@ -283,8 +280,7 @@ string LinuxParser::Command(int pid) {
 // DONE: Read and return the memory used by a process
 std::string LinuxParser::Ram(int pid) {
   string ram = ProcessStatus(pid, "VmSize");
-  if (IsNumber(ram))
-    ram = std::to_string(std::stoi(ram) / 1024);
+  if (IsNumber(ram)) ram = std::to_string(std::stoi(ram) / 1024);
   // std::cout << ram << std::endl;
   return ram;
 }

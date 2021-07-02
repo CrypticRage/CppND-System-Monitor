@@ -1,8 +1,9 @@
 #include "processor.h"
 
 #include <unistd.h>
-#include <vector>
+
 #include <thread>
+#include <vector>
 
 #include "linux_parser.h"
 
@@ -16,7 +17,8 @@ float Processor::Utilization() {
   unsigned long active_end = LinuxParser::ActiveJiffies();
   unsigned long total_end = LinuxParser::Jiffies();
 
-  float usage = (float)(active_end - active_start) / (float)(total_end - total_start);
+  float usage =
+      (float)(active_end - active_start) / (float)(total_end - total_start);
   usage = (usage >= 1.0) ? 0.0 : usage;
 
   return usage;

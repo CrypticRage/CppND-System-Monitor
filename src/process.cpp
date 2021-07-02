@@ -1,10 +1,12 @@
+#include "process.h"
+
 #include <unistd.h>
+
 #include <cctype>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "process.h"
 #include "linux_parser.h"
 
 using std::string;
@@ -33,7 +35,7 @@ float Process::CpuUtilization() const {
   total_time += cutime + cstime;
 
   long seconds = uptime - (starttime / hertz);
-  float usage =(float)(total_time / hertz) / (float)seconds;
+  float usage = (float)(total_time / hertz) / (float)seconds;
   return usage;
 }
 
@@ -50,6 +52,6 @@ string Process::User() { return LinuxParser::User(pid_); }
 long int Process::UpTime() { return LinuxParser::UpTime(pid_); }
 
 // TODO: Overload the "less than" comparison operator for Process objects
-bool Process::operator < (Process const& a) const {
+bool Process::operator<(Process const& a) const {
   return a.CpuUtilization() < CpuUtilization();
 }
