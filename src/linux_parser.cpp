@@ -25,6 +25,7 @@ string LinuxParser::OperatingSystem() {
   string key;
   string value;
   std::ifstream filestream(kOSPath);
+
   if (filestream.is_open()) {
     while (std::getline(filestream, line)) {
       std::replace(line.begin(), line.end(), ' ', '_');
@@ -39,6 +40,8 @@ string LinuxParser::OperatingSystem() {
       }
     }
   }
+  filestream.close();
+
   return value;
 }
 
@@ -52,6 +55,8 @@ string LinuxParser::Kernel() {
     std::istringstream linestream(line);
     linestream >> os >> version >> kernel;
   }
+  stream.close();
+
   return kernel;
 }
 
@@ -93,6 +98,7 @@ float LinuxParser::MemoryUtilization() {
       freeMem = value;
     }
   }
+  stream.close();
 
   return 1.0f - (freeMem / totalMem);
 }
@@ -109,6 +115,7 @@ ulong LinuxParser::UpTime() {
     std::istringstream lineStream(line);
     lineStream >> upTime >> idleTime;
   }
+  stream.close();
 
   return upTime;
 }
@@ -141,8 +148,7 @@ unsigned long LinuxParser::ActiveJiffies(int pid) {
   ulong cstime = stoul(stat[LinuxParser::cstime_]);
 
   total_jiffies = utime + stime + cutime + cstime;
-  // std::cout << "Active Jiffies (" << pid << "): " << total_jiffies <<
-  // std::endl;
+
   return total_jiffies;
 }
 
@@ -150,14 +156,14 @@ unsigned long LinuxParser::ActiveJiffies(int pid) {
 unsigned long LinuxParser::ActiveJiffies() {
   unsigned long jiffies = Jiffies();
   unsigned long idle_jiffies = IdleJiffies();
-  // std::cout << "Active Jiffies: " << jiffies << std::endl;
+
   return jiffies - idle_jiffies;
 }
 
 // DONE: Read and return the number of idle jiffies for the system
 unsigned long LinuxParser::IdleJiffies() {
   vector<unsigned long> jiffies = CpuUtilization();
-  // std::cout << "Idle Jiffies: " << jiffies[CPUStates::kIdle_] << std::endl;
+
   return jiffies[CPUStates::kIdle_];
 }
 
@@ -183,6 +189,7 @@ vector<unsigned long> LinuxParser::CpuUtilization() {
     continue;
   }
 
+  stream.close();
   return jiffies;
 }
 
@@ -209,6 +216,7 @@ std::vector<std::string> LinuxParser::ProcessStat(int pid) {
       info.push_back(entry);
     }
   }
+  stream.close();
 
   return info;
 }
@@ -228,12 +236,13 @@ std::string LinuxParser::ProcessStatus(int pid, std::string param) {
       std::istringstream lineStream(line);
       lineStream >> key >> entry;
       if (key.find(param) != std::string::npos) {
-        return entry;
+        break;
       }
     }
   }
+  stream.close();
 
-  return string();
+  return entry;
 }
 
 // DONE: Read and return the total number of processes
@@ -271,17 +280,16 @@ string LinuxParser::Command(int pid) {
   if (std::string line; std::getline(stream, line)) {
     command = line;
   }
-
-  // std::cout << command << std::endl;
+  stream.close();
 
   return command;
 }
 
 // DONE: Read and return the memory used by a process
 std::string LinuxParser::Ram(int pid) {
-  string ram = ProcessStatus(pid, "VmSize");
+  string ram = ProcessStatus(pid, PID_VM_DATA);
   if (IsNumber(ram)) ram = std::to_string(std::stoi(ram) / 1024);
-  // std::cout << ram << std::endl;
+
   return ram;
 }
 
@@ -292,7 +300,7 @@ string LinuxParser::Uid(int pid) {
 
   std::istringstream lineStream(uid);
   lineStream >> uid;
-  // std::cout << uid << std::endl;
+
   return uid;
 }
 
@@ -318,15 +326,15 @@ string LinuxParser::User(int pid) {
       break;
     }
   }
+  stream.close();
 
-  // std::cout << user << std::endl;
   return user;
 }
 
 // DONE: Read and return the uptime of a process
 long LinuxParser::UpTime(int pid) {
   std::vector<std::string> stat = ProcessStat(pid);
-  ulong sec = std::stoul(stat[starttime_]) / sysconf(_SC_CLK_TCK);
-  // std::cout << "sec: " << sec << std::endl;
+  ulong sec = UpTime() - std::stoul(stat[starttime_]) / sysconf(_SC_CLK_TCK);
+
   return sec;
 }

@@ -16,6 +16,9 @@ string Format::ElapsedTime(long seconds) {
   int days = rem / 24;
 
   char buffer[64];
-  sprintf(buffer, "%i days %i:%02i:%02i", days, hours, mins, secs);
+  if (days == 0)
+    sprintf(buffer, "%i:%02i:%02i", hours, mins, secs);
+  else
+    sprintf(buffer, "%i days %i:%02i:%02i", days, hours, mins, secs);
   return string(buffer);
 }

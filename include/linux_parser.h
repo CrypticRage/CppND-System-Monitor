@@ -55,6 +55,9 @@ enum ProcessStat {
   size_
 };
 
+const std::string PID_VM_SIZE("VmSize");
+const std::string PID_VM_DATA("VmData");
+
 std::vector<unsigned long> CpuUtilization();
 unsigned long Jiffies();
 unsigned long ActiveJiffies();

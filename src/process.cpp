@@ -35,7 +35,7 @@ float Process::CpuUtilization() const {
   total_time += cutime + cstime;
 
   long seconds = uptime - (starttime / hertz);
-  float usage = (float)(total_time / hertz) / (float)seconds;
+  float usage = static_cast<float>(total_time / hertz) / static_cast<float>(seconds);
   return usage;
 }
 
